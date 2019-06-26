@@ -1,34 +1,15 @@
-### php-bignumber
+### php-bytebuffer
 
-![release](https://img.shields.io/badge/release-0.1.1-green.svg) ![php](https://img.shields.io/badge/php-%3E=5.3-green.svg) ![downloads](https://img.shields.io/badge/downloads-2.29k-green.svg)
+![release](https://img.shields.io/badge/release-1.0.1-green.svg) ![php](https://img.shields.io/badge/php-%3E=5.3-green.svg) ![downloads](https://img.shields.io/badge/downloads-2.29k-green.svg)
 
 ## 关于
 
-PHP 中的整型大小和平台有关，通常最大值是二十亿，64位平台下最大值通常为 9E18，当程序中需要处理的数值超出整形的范围，数值将会被解释为浮点数。
-
-浮点数的精度有限并取决于系统，所以永远不要相信浮点数结果精确到了最后一位，也永远不要比较两个浮点数是否相等。
-
-当业务场景需要处理的数值范围比较大或者需要精确处理浮点数值时，应该使用任意精度数学函数，如：交易系统、电商系统等。
-
-当前项目是对任意精度数学函数的封装，用于更方便的解决PHP中大数字和浮点数精度问题。
+使用现代并且简约的方式来处理二进制数据
 
 <br>
 <br>
 
 ##  安装方式
-
-首先请确保你的 PHP 已经安装并支持 BC Math 扩展，如果不支持，具体安装方式参照官网：http://php.net/manual/en/bc.installation.php
-
-查看方式：
-
-	php -info | grep bcmath
-
-如果能够看到输出
-
-	bcmath
-	bcmath.scale => 0 => 0
-
-则表示 BC Math 可以使用
 
 开始安装：
 
@@ -38,7 +19,7 @@ PHP 中的整型大小和平台有关，通常最大值是二十亿，64位平�
 
 #### 2.安装方式二，直接下载并 include
 
-直接下载源码，引入 src/BigNumber.php
+直接下载源码，引入 src/ByteBuffer.php
 
 <br>
 <br>
@@ -49,11 +30,14 @@ PHP 中的整型大小和平台有关，通常最大值是二十亿，64位平�
 
 #### 1.方式一：使用 new 语句
 
-	$number = new \chawuciren\BigNumber('0.002', 3);
+    use \chawuciren\ByteBuffer;
+
+	$buffer = new ByteBuffer();
 
 #### 2.方式二：使用静态方法 build
 
-	$number = \chawuciren\BigNumber::build('0.002', 3);
+    use \chawuciren\ByteBuffer;
+	$number = ByteBuffer::from('123456');
 
 #### 3.方式三：使用 valueOf 方法赋值
 
@@ -86,273 +70,3 @@ PHP 中的整型大小和平台有关，通常最大值是二十亿，64位平�
 
 <br>
 
-#### 2.toString
-
-以字符串类型返回数值
-
-##### 参数:
-
-无
-
-##### 返回值: String(当前数值)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.002', 3);
-	$str = $number->toString();
-	var_dump($str); //string(5) "0.002"
-
-#### 3.value
-
-以字符串类型返回数值，当前为 toString 方法的别名
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.002', 3);
-	$str = $number->value();
-	var_dump($str); //string(5) "0.002"
-
-<br>
-
-#### 4.add
-
-将当前数值加上传入的number值
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 用于相加的数值 |
-
-##### 返回值: BigNumber(当前实例)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.002', 3);
-	$number->add('0.003');
-	var_dump($number->value()); //string(5) "0.005"
-
-<br>
-
-#### 5.sub
-
-将当前数值减去传入的number值
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 用于相减的数值 |
-
-##### 返回值: BigNumber(当前实例)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.002', 3);
-	$number->sub('0.001');
-	var_dump($number->value()); //string(5) "0.001"
-
-<br>
-
-#### 6.mul
-
-将当前数值乘以传入的number值
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 用于相乘的数值 |
-
-##### 返回值: BigNumber(当前实例)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.002', 3);
-	$number->sub('0.001');
-	var_dump($number->value()); //string(5) "0.001"
-
-<br>
-
-#### 7.div
-
-将当前数值除以传入的number值
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 将当前数值除以传入的number值 |
-
-##### 返回值: BigNumber(当前实例)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.002', 3);
-	$number->dev('2');
-	var_dump($number->value()); //string(5) "0.001"
-
-<br>
-
-#### 8.mod
-
-将当前数值用传入的number值取模
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 用于取模的数值 |
-
-##### 返回值: BigNumber(当前实例)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('108');
-	$number->mod('10');
-	var_dump($number->value()); //string(1) "8"
-
-<br>
-
-#### 9.pow
-
-取当前数值的number次方
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 乘方的数值 |
-
-##### 返回值: BigNumber(当前实例)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('2');
-	$number->pow('2');
-	var_dump($number->value()); //string(1) "4"
-
-<br>
-
-#### 10.sqrt
-
-取当前数值的平方根
-
-##### 参数:
-
-无
-
-##### 返回值: BigNumber(当前实例)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('16');
-	$number->sqrt();
-	var_dump($number->value()); //string(1) "4"
-
-<br>
-
-#### 11.eq
-
-判断当前数值是否等于number值
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 参与判断的右值 |
-
-
-##### 返回值: Bool (true:相等; false:不相等)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.00000000000000000001', 20);
-	$number2 = new \chawuciren\BigNumber('0.00000000000000000001', 20);
-	var_dump($number->eq($number2)); //bool(true)
-
-<br>
-
-#### 12.gt
-
-判断当前数值是否大于number值
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 参与判断的右值 |
-
-
-##### 返回值: Bool (true:大于; false:不大于)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.00000000000000000002', 20);
-	$number2 = new \chawuciren\BigNumber('0.00000000000000000001', 20);
-	var_dump($number->gt($number2)); //bool(true)
-
-<br>
-
-#### 13.egt
-
-判断当前数值是否大于或等于number值
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 参与判断的右值 |
-
-
-##### 返回值: Bool (true:大于或等于; false:不大于且不等于)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.00000000000000000002', 20);
-	$number2 = new \chawuciren\BigNumber('0.00000000000000000001', 20);
-	var_dump($number->egt($number2)); //bool(true)
-
-<br>
-
-#### 14.lt
-
-判断当前数值是否小于number值
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 参与判断的右值 |
-
-
-##### 返回值: Bool (true:小于; false:不小于)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.00000000000000000002', 20);
-	$number2 = new \chawuciren\BigNumber('0.00000000000000000001', 20);
-	var_dump($number->lt($number2)); //bool(false)
-
-<br>
-
-#### 15.elt
-
-判断当前数值是否小于或等于number值
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 参与判断的右值 |
-
-
-##### 返回值: Bool (true:小于或等于; false:不小于且不等于)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber('0.00000000000000000002', 20);
-	$number2 = new \chawuciren\BigNumber('0.00000000000000000001', 20);
-	var_dump($number->lt($number2)); //bool(false)
-
-<br>

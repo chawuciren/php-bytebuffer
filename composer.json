@@ -1,6 +1,6 @@
 {
-    "name": "chawuciren/bignumber",
-    "description": "PHP BigNumber",
+    "name": "chawuciren/bytebuffer",
+    "description": "",
     "type": "library",
     "authors": [
         {
@@ -12,6 +12,7 @@
     "minimum-stability": "dev",
     "require": {
         "php": ">=5.3"
+        "chawuciren/bignumber": "0.1.1"
     },
     "autoload": {
         "psr-4": {
