@@ -26,7 +26,7 @@ class ByteBuffer
         $this->buffer = [];
         $this->offset = 0;
 
-        $this->valueOf($data, $length);
+        $this->initValue($data, $length);
     }
 
     /**
@@ -62,7 +62,7 @@ class ByteBuffer
      *
      * @return  ByteBuffer
      */
-    public function valueOf($data = '', $length = 0)
+    public function initValue($data = '', $length = 0)
     {
         // 初始化类名
         $this->initCurrentFullClassName();
@@ -290,6 +290,56 @@ class ByteBuffer
     }
 
     /**
+     * @brief 读取一个浮点数据(大端序)
+     *
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function readFloatBE($offset = 0)
+    {
+        return $this->readValue('G', $offset, 4);
+    }
+
+    /**
+     * @brief 读取一个浮点型数据(小端序)
+     *
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function readFloatLE($offset = 0)
+    {
+        return $this->readValue('g', $offset, 4);
+    }
+
+    /**
+     * @brief 读取一个双精度浮点数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function readDoubleBE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'E', $offset, 8);
+    }
+
+    /**
+     * @brief 读取一个双精度浮点型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function readDoubleLE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'e', $offset, 8);
+    }
+
+    /**
      * @brief 写入一个无符号8位整型数据
      *
      * @param $value String/BigNumber/Int 要写入的数据
@@ -378,6 +428,58 @@ class ByteBuffer
     public function writeUInt64LE($value = 0, $offset = 0)
     {
         return $this->writeValue($value, 'P', $offset, 8);
+    }
+
+    /**
+     * @brief 写入一个浮点数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeFloatBE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'G', $offset, 4);
+    }
+
+    /**
+     * @brief 写入一个浮点型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeFloatLE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'g', $offset, 4);
+    }
+
+    /**
+     * @brief 写入一个双精度浮点数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeDoubleBE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'E', $offset, 8);
+    }
+
+    /**
+     * @brief 写入一个双精度浮点型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeDoubleLE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'e', $offset, 8);
     }
 
     /**
