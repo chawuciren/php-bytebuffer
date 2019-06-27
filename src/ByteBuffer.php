@@ -118,7 +118,7 @@ class ByteBuffer
         $buffer = '';
         $length = $this->length;
         for ($index = 0; $index < $length; $index++) {
-            $buffer .= pack('C', $this->buffer[$offset + $index]);
+            $buffer .= pack('C', $this->buffer[$index]);
         }
 
         return $buffer;
