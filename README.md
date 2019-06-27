@@ -37,12 +37,12 @@
 #### 2.方式二：使用静态方法 build
 
     use \chawuciren\ByteBuffer;
-	$number = ByteBuffer::from('123456');
+	$number = ByteBuffer::from('BufferString');
 
-#### 3.方式三：使用 valueOf 方法赋值
+#### 3.方式三：使用 fill 方法赋值
 
 	$number = new \chawuciren\BigNumber();
-	$number->valueOf('0.002', 3);
+	$number->fill('0.002', 3);
 
 <br>
 <br>

@@ -1,6 +1,8 @@
 <?php
 namespace chawuciren;
 
+use \chawuciren\BigNumber;
+
 class ByteBuffer
 {
     // 长度
@@ -9,8 +11,6 @@ class ByteBuffer
     public $buffer;
     // 偏移
     public $offset;
-    // 类名和命名空间
-    protected $currentFullClassName = '';
 
     /**
      * @brief 构造
@@ -20,13 +20,18 @@ class ByteBuffer
      *
      * @return
      */
-    public function __construct($data = '', $length = 0)
+    public function __construct($data = '', $length = null)
     {
         $this->length = 0;
         $this->buffer = [];
         $this->offset = 0;
 
-        $this->initValue($data, $length);
+        if ($length === 0 && (is_int($data) || is_float($data) || is_double($data) || is_long($data))) {
+            $data   = self::alloc($data);
+            $length = null;
+        }
+
+        $this->fill($data, 0, $length);
     }
 
     /**
@@ -37,21 +42,44 @@ class ByteBuffer
      *
      * @return ByteBuffer
      */
-    public static function from($data = '', $length = 0)
+    public static function from($data = '', $length = null)
     {
         return new self($data, $length);
     }
 
     /**
-     * @brief 初始化成员变量中的完整类名和命名空间
+     * @brief 初始化一个 ByteBuffer
+     *
+     * @param $length 长度
+     * @param $fill 填充的UInt8值，默认为0
+     *
+     * @return ByteBuffer
+     */
+    public static function alloc($length = 0, $fill = 0)
+    {
+        $buffer = [];
+
+        if ($fill < 0 || $fill > 255) {
+            $fill = 0;
+        }
+        $buffer = array_pad($buffer, $length, $fill);
+        $buffer = new self($buffer, $length);
+
+        return $buffer;
+    }
+
+    /**
+     * @brief 判断数据是否ByteBuffer类型
      *
      * @return null
      */
-    public function initCurrentFullClassName()
+    public static function isByteBuffer($data = null)
     {
-        if (empty($this->currentFullClassName)) {
-            $this->currentFullClassName = get_class();
+        if (get_class($data) == get_class()) {
+            return true;
         }
+
+        return false;
     }
 
     /**
@@ -62,48 +90,57 @@ class ByteBuffer
      *
      * @return  ByteBuffer
      */
-    public function initValue($data = '', $length = 0)
+    public function fill($data = '', $offset = 0, $length = null)
     {
-        // 初始化类名
-        $this->initCurrentFullClassName();
-
         // 初始化buffer
         if (empty($this->buffer)) {
             $this->buffer = [];
         }
 
-        if (empty($length) && (is_int($data) || is_float($data) || is_double($data) || is_long($data))) {
-            // 指定大小
-            $length = $data;
-            $data   = null;
-        } else if (is_array($data)) {
+        if (empty($offset) && $this->offset > 0) {
+            $offset = $this->offset;
+        }
+
+        // 初始化数据和长度
+        $buffer     = null;
+        $dataLength = 0;
+
+        // 解析传入的数据
+        if (is_array($data)) {
             // 传入数组类型
-            $this->offset = 0;
-            $this->buffer = $data;
-            $this->length = count($data);
-
-            return $this;
-        } else if (is_object($data) && get_class($data) == $this->currentFullClassName) {
+            $dataLength = count($data);
+            $buffer     = $data;
+        } else if (is_object($data) && self::isByteBuffer($data)) {
             // 传入ByteBuffer类型
-            $this->offset = 0;
-            $this->buffer = $data->buffer;
-            $this->length = $data->length;
-
-            return $this;
-        }
-
-        // 将数据切片
-        $buffer = unpack('C*', $data);
-        if ($length > 0) {
-            $buffer = array_slice($buffer, 0, $length);
+            $dataLength = $data->length;
+            $buffer     = $data->buffer;
         } else {
-            $length = count($buffer);
-            $buffer = array_slice($buffer, 0, $length);
+            // 二进制数据
+            $buffer     = unpack('C*', $data);
+            $dataLength = count($buffer);
         }
 
-        $buffer       = array_pad($buffer, $length, 0);
-        $this->length = $length;
-        $this->buffer = $buffer;
+        if (empty($length)) {
+            $length = count($buffer);
+        }
+        $buffer = array_slice($buffer, 0, $length);
+
+        // 重新获取长度
+        if (empty($this->length) && $length > 0) {
+            $this->length = $length;
+        }
+        //判断是否溢出
+        if (($offset + $length) > $this->length) {
+            return false;
+        }
+
+        // 将填充数据复制到缓冲区
+        if ($length > count($buffer)) {
+            $length = count($buffer);
+        }
+        for ($index = 0; $index < $length; $index++) {
+            $this->buffer[$offset + $index] = $buffer[$index];
+        }
 
         return $this;
     }
@@ -133,16 +170,19 @@ class ByteBuffer
      *
      * @return Bool/BigNumber
      */
-    protected function readValue($format = 'C', $offset = 0, $length = 1)
+    protected function readValue($format = 'C', $offset = 0, $length = 1, $scale = 0)
     {
+        //初始化偏移量
         if ($offset === null) {
             $offset = $this->offset;
         }
 
+        //偏移量超出则返回错误
         if ($offset < 0 || ($offset + $length) > $this->length) {
             return false;
         }
 
+        $number = BigNumber::build('0', $scale);
         $buffer = '';
         for ($index = 0; $index < $length; $index++) {
             $buffer .= pack('C', $this->buffer[$offset + $index]);
@@ -152,7 +192,7 @@ class ByteBuffer
         $value        = unpack($format, $buffer);
         if (!empty($value) && is_array($value) && count($value) == 1) {
             $value = $value[1];
-            $value = new \chawuciren\BigNumber($value);
+            $value = $number->add($value);
         } else {
             $value = false;
         }
@@ -181,7 +221,7 @@ class ByteBuffer
         }
 
         // 将传入的值转换为 BigNumber 类型
-        $value = new \chawuciren\BigNumber($value);
+        $value = BigNumber::build($value);
         $value = $value->toString();
 
         $buffer = pack($format, $value);
@@ -209,134 +249,143 @@ class ByteBuffer
      * @brief 读取一个无符号8位整型数据
      *
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return BigNumber
      */
-    public function readUInt8($offset = null)
+    public function readUInt8($offset = null, $scale = 0)
     {
-        return $this->readValue('C', $offset, 1);
+        return $this->readValue('C', $offset, 1, $scale);
     }
 
     /**
      * @brief 读取一个无符号16位整型数据(大端序)
      *
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return BigNumber
      */
-    public function readUInt16BE($offset = null)
+    public function readUInt16BE($offset = null, $scale = 0)
     {
-        return $this->readValue('n', $offset, 2);
+        return $this->readValue('n', $offset, 2, $scale);
     }
 
     /**
      * @brief 读取一个无符号16位整型数据(小端序)
      *
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return BigNumber
      */
-    public function readUInt16LE($offset = null)
+    public function readUInt16LE($offset = null, $scale = 0)
     {
-        return $this->readValue('v', $offset, 2);
+        return $this->readValue('v', $offset, 2, $scale);
     }
 
     /**
      * @brief 读取一个无符号32位整型数据(大端序)
      *
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return BigNumber
      */
-    public function readUInt32BE($offset = null)
+    public function readUInt32BE($offset = null, $scale = 0)
     {
-        return $this->readValue('N', $offset, 4);
+        return $this->readValue('N', $offset, 4, $scale);
     }
 
     /**
      * @brief 读取一个无符号32位整型数据(小端序)
      *
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return BigNumber
      */
-    public function readUInt32LE($offset = null)
+    public function readUInt32LE($offset = null, $scale = 0)
     {
-        return $this->readValue('V', $offset, 4);
+        return $this->readValue('V', $offset, 4, $scale);
     }
 
     /**
      * @brief 读取一个无符号64位整型数据(大端序)
      *
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return BigNumber
      */
-    public function readUInt64BE($offset = null)
+    public function readUInt64BE($offset = null, $scale = 0)
     {
-        return $this->readValue('J', $offset, 8);
+        return $this->readValue('J', $offset, 8, $scale);
     }
 
     /**
      * @brief 读取一个无符号32位整型数据(小端序)
      *
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return BigNumber
      */
-    public function readUInt64LE($offset = null)
+    public function readUInt64LE($offset = null, $scale = 0)
     {
-        return $this->readValue('P', $offset, 8);
+        return $this->readValue('P', $offset, 8, $scale);
     }
 
     /**
      * @brief 读取一个浮点数据(大端序)
      *
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return Int 偏移
      */
-    public function readFloatBE($offset = 0)
+    public function readFloatBE($offset = 0, $scale = 0)
     {
-        return $this->readValue('G', $offset, 4);
+        return $this->readValue('G', $offset, 4, $scale);
     }
 
     /**
      * @brief 读取一个浮点型数据(小端序)
      *
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return Int 偏移
      */
-    public function readFloatLE($offset = 0)
+    public function readFloatLE($offset = 0, $scale = 0)
     {
-        return $this->readValue('g', $offset, 4);
+        return $this->readValue('g', $offset, 4, $scale);
     }
 
     /**
      * @brief 读取一个双精度浮点数据(大端序)
      *
-     * @param $value String/BigNumber/Int 要写入的数据
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return Int 偏移
      */
-    public function readDoubleBE($value = 0, $offset = 0)
+    public function readDoubleBE($offset = 0, $scale = 0)
     {
-        return $this->writeValue($value, 'E', $offset, 8);
+        return $this->readValue('E', $offset, 8, $scale);
     }
 
     /**
      * @brief 读取一个双精度浮点型数据(小端序)
      *
-     * @param $value String/BigNumber/Int 要写入的数据
      * @param $offset 偏移
+     * @param $scale 读取的精度
      *
      * @return Int 偏移
      */
-    public function readDoubleLE($value = 0, $offset = 0)
+    public function readDoubleLE($offset = 0, $scale = 0)
     {
-        return $this->writeValue($value, 'e', $offset, 8);
+        return $this->readValue('e', $offset, 8, $scale);
     }
 
     /**
