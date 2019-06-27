@@ -141,6 +141,7 @@ class ByteBuffer
         for ($index = 0; $index < $length; $index++) {
             $this->buffer[$offset + $index] = $buffer[$index];
         }
+        $this->offset = $offset + $length;
 
         return $this;
     }
