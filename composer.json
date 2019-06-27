@@ -12,11 +12,10 @@
     "minimum-stability": "dev",
     "require": {
         "php": ">=5.3",
-        "chawuciren/bignumber": "dev-master"
+        "chawuciren/bignumber": "0.1.2"
     },
     "require-dev": {
         "php": ">=5.3",
-        "chawuciren/bignumber": "dev-master"
     },
     "autoload": {
         "psr-4": {
