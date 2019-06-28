@@ -1,6 +1,6 @@
 {
     "name": "chawuciren/bytebuffer",
-    "description": "",
+    "description": "Handle binary data in a modern and minimalist way",
     "type": "library",
     "authors": [
         {
@@ -12,7 +12,7 @@
     "minimum-stability": "dev",
     "require": {
         "php": ">=5.3",
-        "chawuciren/bignumber": "1.0.1"
+        "chawuciren/bignumber": "1.0.3"
     },
     "require-dev": {
         "php": ">=5.3"
