@@ -12,6 +12,14 @@ class ByteBuffer
     // 偏移
     public $offset;
 
+    // 各种类型的数值长度定义
+    const INT8_BYTE_LENGTH   = 1;
+    const INT16_BYTE_LENGTH  = 2;
+    const INT32_BYTE_LENGTH  = 4;
+    const INT64_BYTE_LENGTH  = 8;
+    const FLOAT_BYTE_LENGTH  = 4;
+    const DOUBLE_BYTE_LENGTH = 8;
+
     /**
      * @brief 构造
      *
@@ -69,6 +77,28 @@ class ByteBuffer
     }
 
     /**
+     * @brief 转换数字的大小端序
+     *
+     * @param $value 数字
+     * @param $format 格式
+     * @param $length 位数
+     * @param $scale 精度
+     *
+     * @return BigNumber
+     */
+    public static function convertNumberByteOrder($value, $format = 'C', $length = self::INT8_BYTE_LENGTH, $scale = 0)
+    {
+        $buffer = self::alloc($length);
+        $buffer->writeValue($value, $format, 0, $length);
+        $values = $buffer->values();
+        $values = array_reverse($values);
+        $buffer = self::from($values);
+        $value  = $buffer->readValue($format, 0, $length, $scale);
+
+        return $value;
+    }
+
+    /**
      * @brief 判断数据是否ByteBuffer类型
      *
      * @return null
@@ -80,6 +110,22 @@ class ByteBuffer
         }
 
         return false;
+    }
+
+    /**
+     * @brief 判断主机序是大端序还是小端序
+     *
+     * @return Bool
+     */
+    public static function isMachineBigEndian()
+    {
+        $bin = pack("L", 0x12345678);
+        $hex = bin2hex($bin);
+        if (ord(pack("H2", $hex)) === 0x78) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -171,7 +217,7 @@ class ByteBuffer
      *
      * @return Bool/BigNumber
      */
-    protected function readValue($format = 'C', $offset = 0, $length = 1, $scale = 0)
+    public function readValue($format = 'C', $offset = 0, $length = self::INT8_BYTE_LENGTH, $scale = 0)
     {
         //初始化偏移量
         if ($offset === null) {
@@ -211,7 +257,7 @@ class ByteBuffer
      *
      * @return
      */
-    protected function writeValue($value = 0, $format = 'C', $offset = 0, $length = 1)
+    public function writeValue($value = 0, $format = 'C', $offset = 0, $length = self::INT8_BYTE_LENGTH)
     {
         if ($offset === null) {
             $offset = $this->offset;
@@ -247,289 +293,13 @@ class ByteBuffer
     }
 
     /**
-     * @brief 读取一个无符号8位整型数据
+     * @brief 返回缓冲区的数组值
      *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return BigNumber
+     * @return Array
      */
-    public function readUInt8($offset = null, $scale = 0)
+    public function values()
     {
-        return $this->readValue('C', $offset, 1, $scale);
-    }
-
-    /**
-     * @brief 读取一个无符号16位整型数据(大端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return BigNumber
-     */
-    public function readUInt16BE($offset = null, $scale = 0)
-    {
-        return $this->readValue('n', $offset, 2, $scale);
-    }
-
-    /**
-     * @brief 读取一个无符号16位整型数据(小端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return BigNumber
-     */
-    public function readUInt16LE($offset = null, $scale = 0)
-    {
-        return $this->readValue('v', $offset, 2, $scale);
-    }
-
-    /**
-     * @brief 读取一个无符号32位整型数据(大端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return BigNumber
-     */
-    public function readUInt32BE($offset = null, $scale = 0)
-    {
-        return $this->readValue('N', $offset, 4, $scale);
-    }
-
-    /**
-     * @brief 读取一个无符号32位整型数据(小端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return BigNumber
-     */
-    public function readUInt32LE($offset = null, $scale = 0)
-    {
-        return $this->readValue('V', $offset, 4, $scale);
-    }
-
-    /**
-     * @brief 读取一个无符号64位整型数据(大端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return BigNumber
-     */
-    public function readUInt64BE($offset = null, $scale = 0)
-    {
-        return $this->readValue('J', $offset, 8, $scale);
-    }
-
-    /**
-     * @brief 读取一个无符号32位整型数据(小端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return BigNumber
-     */
-    public function readUInt64LE($offset = null, $scale = 0)
-    {
-        return $this->readValue('P', $offset, 8, $scale);
-    }
-
-    /**
-     * @brief 读取一个浮点数据(大端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return Int 偏移
-     */
-    public function readFloatBE($offset = 0, $scale = 0)
-    {
-        return $this->readValue('G', $offset, 4, $scale);
-    }
-
-    /**
-     * @brief 读取一个浮点型数据(小端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return Int 偏移
-     */
-    public function readFloatLE($offset = 0, $scale = 0)
-    {
-        return $this->readValue('g', $offset, 4, $scale);
-    }
-
-    /**
-     * @brief 读取一个双精度浮点数据(大端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return Int 偏移
-     */
-    public function readDoubleBE($offset = 0, $scale = 0)
-    {
-        return $this->readValue('E', $offset, 8, $scale);
-    }
-
-    /**
-     * @brief 读取一个双精度浮点型数据(小端序)
-     *
-     * @param $offset 偏移
-     * @param $scale 读取的精度
-     *
-     * @return Int 偏移
-     */
-    public function readDoubleLE($offset = 0, $scale = 0)
-    {
-        return $this->readValue('e', $offset, 8, $scale);
-    }
-
-    /**
-     * @brief 写入一个无符号8位整型数据
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeUInt8($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'C', $offset, 1);
-    }
-
-    /**
-     * @brief 写入一个无符号16位整型数据(大端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeUInt16BE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'n', $offset, 2);
-    }
-
-    /**
-     * @brief 写入一个无符号16位整型数据(小端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeUInt16LE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'v', $offset, 2);
-    }
-
-    /**
-     * @brief 写入一个无符号32位整型数据(大端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeUInt32BE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'N', $offset, 4);
-    }
-
-    /**
-     * @brief 写入一个无符号32位整型数据(小端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeUInt32LE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'V', $offset, 4);
-    }
-
-    /**
-     * @brief 写入一个无符号64位整型数据(大端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeUInt64BE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'J', $offset, 8);
-    }
-
-    /**
-     * @brief 写入一个无符号64位整型数据(小端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeUInt64LE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'P', $offset, 8);
-    }
-
-    /**
-     * @brief 写入一个浮点数据(大端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeFloatBE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'G', $offset, 4);
-    }
-
-    /**
-     * @brief 写入一个浮点型数据(小端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeFloatLE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'g', $offset, 4);
-    }
-
-    /**
-     * @brief 写入一个双精度浮点数据(大端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeDoubleBE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'E', $offset, 8);
-    }
-
-    /**
-     * @brief 写入一个双精度浮点型数据(小端序)
-     *
-     * @param $value String/BigNumber/Int 要写入的数据
-     * @param $offset 偏移
-     *
-     * @return Int 偏移
-     */
-    public function writeDoubleLE($value = 0, $offset = 0)
-    {
-        return $this->writeValue($value, 'e', $offset, 8);
+        return $this->buffer;
     }
 
     /**
@@ -548,5 +318,521 @@ class ByteBuffer
         $buffer->buffer = $bufferArray;
 
         return $buffer;
+    }
+
+    /**
+     * @brief 读取一个有符号8位整型数据
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readInt8($offset = null, $scale = 0)
+    {
+        return $this->readValue('c', $offset, self::INT8_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个无符号8位整型数据
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readUInt8($offset = null, $scale = 0)
+    {
+        return $this->readValue('C', $offset, self::INT8_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个有符号16位整型数据(大端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readInt16BE($offset = null, $scale = 0)
+    {
+        $value = $this->readValue('s', $offset, self::INT16_BYTE_LENGTH, $scale);
+        if (!self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 's', self::INT16_BYTE_LENGTH, $scale);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @brief 读取一个有符号16位整型数据(小端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readInt16LE($offset = null, $scale = 0)
+    {
+        $value = $this->readValue('s', $offset, self::INT16_BYTE_LENGTH, $scale);
+        if (self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 's', self::INT16_BYTE_LENGTH, $scale);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @brief 读取一个无符号16位整型数据(大端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readUInt16BE($offset = null, $scale = 0)
+    {
+        return $this->readValue('n', $offset, self::INT16_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个无符号16位整型数据(小端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readUInt16LE($offset = null, $scale = 0)
+    {
+        return $this->readValue('v', $offset, self::INT16_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个有符号32位整型数据(大端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readInt32BE($offset = null, $scale = 0)
+    {
+        $value = $this->readValue('l', $offset, self::INT32_BYTE_LENGTH, $scale);
+        if (!self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 'l', self::INT32_BYTE_LENGTH, $scale);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @brief 读取一个有符号32位整型数据(小端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readInt32LE($offset = null, $scale = 0)
+    {
+        $value = $this->readValue('l', $offset, self::INT32_BYTE_LENGTH, $scale);
+        if (self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 'l', self::INT32_BYTE_LENGTH, $scale);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @brief 读取一个无符号32位整型数据(大端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readUInt32BE($offset = null, $scale = 0)
+    {
+        return $this->readValue('N', $offset, self::INT32_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个无符号32位整型数据(小端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readUInt32LE($offset = null, $scale = 0)
+    {
+        return $this->readValue('V', $offset, self::INT32_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个有符号64位整型数据(大端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readInt64BE($offset = null, $scale = 0)
+    {
+        $value = $this->readValue('q', $offset, self::INT64_BYTE_LENGTH, $scale);
+        if (!self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 'q', self::INT64_BYTE_LENGTH, $scale);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @brief 读取一个有符号64位整型数据(小端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readInt64LE($offset = null, $scale = 0)
+    {
+        $value = $this->readValue('q', $offset, self::INT64_BYTE_LENGTH, $scale);
+        if (self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 'q', self::INT64_BYTE_LENGTH, $scale);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @brief 读取一个无符号64位整型数据(大端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readUInt64BE($offset = null, $scale = 0)
+    {
+        return $this->readValue('J', $offset, self::INT64_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个无符号32位整型数据(小端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return BigNumber
+     */
+    public function readUInt64LE($offset = null, $scale = 0)
+    {
+        return $this->readValue('P', $offset, self::INT64_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个浮点数据(大端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return Int 偏移
+     */
+    public function readFloatBE($offset = 0, $scale = 0)
+    {
+        return $this->readValue('G', $offset, self::FLOAT_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个浮点型数据(小端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return Int 偏移
+     */
+    public function readFloatLE($offset = 0, $scale = 0)
+    {
+        return $this->readValue('g', $offset, self::FLOAT_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个双精度浮点数据(大端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return Int 偏移
+     */
+    public function readDoubleBE($offset = 0, $scale = 0)
+    {
+        return $this->readValue('E', $offset, self::DOUBLE_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 读取一个双精度浮点型数据(小端序)
+     *
+     * @param $offset 偏移
+     * @param $scale 读取的精度
+     *
+     * @return Int 偏移
+     */
+    public function readDoubleLE($offset = 0, $scale = 0)
+    {
+        return $this->readValue('e', $offset, self::DOUBLE_BYTE_LENGTH, $scale);
+    }
+
+    /**
+     * @brief 写入一个有符号8位整型数据
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeInt8($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'c', $offset, self::INT8_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个无符号8位整型数据
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeUInt8($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'C', $offset, self::INT8_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个有符号16位整型数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeInt16BE($value = 0, $offset = 0)
+    {
+        if(!self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 's', self::INT16_BYTE_LENGTH, $scale);
+        }
+        return $this->writeValue($value, 's', $offset, self::INT16_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个有符号16位整型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeInt16LE($value = 0, $offset = 0)
+    {
+        if(self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 's', self::INT16_BYTE_LENGTH, $scale);
+        }
+        return $this->writeValue($value, 's', $offset, self::INT16_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个无符号16位整型数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeUInt16BE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'n', $offset, self::INT16_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个无符号16位整型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeUInt16LE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'v', $offset, self::INT16_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个有符号32位整型数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeInt32BE($value = 0, $offset = 0)
+    {
+        if(!self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 'l', self::INT16_BYTE_LENGTH, $scale);
+        }
+        return $this->writeValue($value, 'l', $offset, self::INT32_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个有符号32位整型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeInt32LE($value = 0, $offset = 0)
+    {
+        if(self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 'l', self::INT16_BYTE_LENGTH, $scale);
+        }
+        return $this->writeValue($value, 'l', $offset, self::INT32_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个无符号32位整型数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeUInt32BE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'N', $offset, self::INT32_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个无符号32位整型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeUInt32LE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'V', $offset, self::INT32_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个有符号64位整型数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeInt64BE($value = 0, $offset = 0)
+    {
+        if(!self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 'q', self::INT16_BYTE_LENGTH, $scale);
+        }
+        return $this->writeValue($value, 'q', $offset, self::INT64_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个有符号64位整型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeInt64LE($value = 0, $offset = 0)
+    {
+        if(self::isMachineBigEndian()) {
+            $value = self::convertNumberByteOrder($value, 'q', self::INT16_BYTE_LENGTH, $scale);
+        }
+        return $this->writeValue($value, 'q', $offset, self::INT64_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个无符号64位整型数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeUInt64BE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'J', $offset, self::INT64_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个无符号64位整型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeUInt64LE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'P', $offset, self::INT64_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个浮点数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeFloatBE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'G', $offset, self::FLOAT_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个浮点型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeFloatLE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'g', $offset, self::FLOAT_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个双精度浮点数据(大端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeDoubleBE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'E', $offset, self::DOUBLE_BYTE_LENGTH);
+    }
+
+    /**
+     * @brief 写入一个双精度浮点型数据(小端序)
+     *
+     * @param $value String/BigNumber/Int 要写入的数据
+     * @param $offset 偏移
+     *
+     * @return Int 偏移
+     */
+    public function writeDoubleLE($value = 0, $offset = 0)
+    {
+        return $this->writeValue($value, 'e', $offset, self::DOUBLE_BYTE_LENGTH);
     }
 }
