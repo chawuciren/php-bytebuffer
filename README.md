@@ -32,7 +32,7 @@
 
     use \chawuciren\ByteBuffer;
 
-	$buffer = new ByteBuffer();
+	$buffer = new ByteBuffer('BufferString');
 
 #### 2.方式二：使用静态方法 build
 
@@ -41,32 +41,8 @@
 
 #### 3.方式三：使用 fill 方法赋值
 
-	$number = new \chawuciren\BigNumber();
-	$number->fill('0.002', 3);
+	$number = new \chawuciren\BigNumber(10);
+	$number->fill('BufferString');
 
 <br>
 <br>
-
-## 方法列表
-
-#### 1.valueOf
-
-设置一个值到BigNumber实例中 
-
-##### 参数:
-
-| 参数名 | 类型 | 说明 |
-|--|--|--|
-| number | String/BigNumber | 字符串或BigNumber类型的数字 |
-| scale| Int | 数字精度 |
-
-##### 返回值: BigNumber(当前实例)
-
-##### 示例:
-
-	$number = new \chawuciren\BigNumber();
-	$number->valueOf('0.002', 3);
-	var_dump($number); //object(chawuciren\BigNumber)
-
-<br>
-
