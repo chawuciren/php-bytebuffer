@@ -34,7 +34,7 @@ class ByteBuffer
         $this->buffer = [];
         $this->offset = 0;
 
-        if ($length === 0 && (is_int($data) || is_float($data) || is_double($data) || is_long($data))) {
+        if ($length === null && (is_int($data) || is_float($data) || is_double($data) || is_long($data))) {
             $data   = self::alloc($data);
             $length = null;
         }
